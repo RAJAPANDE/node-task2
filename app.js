@@ -65,11 +65,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle user registration
-    socket.on('userRegistered', (userData) => {
-        socket.broadcast.emit('newUserRegistered', userData);
-    });
-
     // Handle user disconnect (auto logout)
     socket.on('disconnect', async () => {
         try {
@@ -133,3 +128,4 @@ server.listen(PORT, () => {
 });
 
 module.exports = { app, server, io };
+
