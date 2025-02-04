@@ -7,11 +7,13 @@ const searchInput = document.querySelector('.search-bar input');
 const totalUsersSpan = document.querySelector('.total-users span');
 const onlineUsersSpan = document.querySelector('.online-users span');
 const activeUsersTable = document.querySelector('.active-users-table tbody');
+const allUsersTable = document.querySelector('.all-users-table tbody');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', fetchUsers);
 
 // Event Listeners
+searchInput.addEventListener('input', handleSearch);
 socket.on('userStatusUpdate', handleUserStatusUpdate);
 socket.on('newUserRegistered', handleNewUser);
 
@@ -29,22 +31,6 @@ async function fetchUsers() {
         console.error('Error fetching users:', error);
         showNotification('Error fetching users', 'error');
     }
-}
-
-// Handle user status update
-function handleUserStatusUpdate(data) {
-    const userIndex = allUsers.findIndex(user => user._id === data.userId);
-    if (userIndex !== -1) {
-        allUsers[userIndex].status = data.status;
-        allUsers[userIndex].lastActive = data.lastActive;
-        updateTables();
-    }
-}
-
-// Handle new user registration
-function handleNewUser(userData) {
-    allUsers.push(userData);
-    updateTables();
 }
 
 // Update tables
@@ -206,6 +192,43 @@ async function viewUserDetails(userId) {
         console.error('Error:', error);
         showNotification('Error fetching user details', 'error');
     }
+}
+
+// Handle user status update
+function handleUserStatusUpdate(data) {
+    const userIndex = allUsers.findIndex(user => user._id === data.userId);
+    if (userIndex !== -1) {
+        allUsers[userIndex].status = data.status;
+        allUsers[userIndex].lastActive = data.lastActive;
+        updateTables();
+    }
+}
+
+// Handle new user registration
+function handleNewUser(userData) {
+    allUsers.push(userData);
+    updateTables();
+}
+
+// Handle search
+function handleSearch(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const filteredUsers = allUsers.filter(user => 
+        user.firstName.toLowerCase().includes(searchTerm) ||
+        user.lastName.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm)
+    );
+    
+    activeUsers = filteredUsers.filter(user => user.status === 'online');
+    
+    // Update tables with filtered data
+    activeUsersTable.innerHTML = activeUsers
+        .map(user => createActiveUserRow(user))
+        .join('');
+    
+    allUsersTable.innerHTML = filteredUsers
+        .map(user => createAllUserRow(user))
+        .join('');
 }
 
 // Show notification
