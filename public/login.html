@@ -54,12 +54,12 @@
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('/users/login', { // Changed to /users/login
+                const response = await fetch('/users/login', { // Ensure we're using /users/login
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ loginId, password })
+                    body: JSON.stringify({ loginId, password }) // Ensure we're sending loginId and password
                 });
 
                 const data = await response.json();
