@@ -140,7 +140,7 @@ router.post('/', async (req, res) => {
             },
             loginId,
             password,
-            status: 'offline',
+            status: 'online', // Set user as online
             lastActive: new Date()
         });
 
@@ -185,69 +185,5 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Update user status
-router.patch('/:id/status', async (req, res) => {
-    try {
-        const { status } = req.body;
-        const user = await User.findByIdAndUpdate(
-            req.params.id,
-            {
-                status,
-                lastActive: new Date()
-            },
-            { new: true }
-        ).select('-password');
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            user
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error updating user status',
-            error: error.message
-        });
-    }
-});
-
-// Update user
-router.put('/:id', async (req, res) => {
-    try {
-        const updates = req.body;
-        delete updates.password; // Prevent password update through this route
-
-        const user = await User.findByIdAndUpdate(
-            req.params.id,
-            { $set: updates },
-            { new: true, runValidators: true }
-        ).select('-password');
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            user
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error updating user',
-            error: error.message
-        });
-    }
-});
-
 module.exports = router;
+
