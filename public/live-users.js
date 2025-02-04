@@ -57,12 +57,20 @@ function updateTables() {
     
     // Update tables
     updateActiveUsersTable();
+    updateAllUsersTable();
 }
 
 // Update active users table
 function updateActiveUsersTable() {
     activeUsersTable.innerHTML = activeUsers
         .map(user => createActiveUserRow(user))
+        .join('');
+}
+
+// Update all users table
+function updateAllUsersTable() {
+    allUsersTable.innerHTML = allUsers
+        .map(user => createAllUserRow(user))
         .join('');
 }
 
@@ -81,7 +89,22 @@ function createActiveUserRow(user) {
     `;
 }
 
-// View user details in popup modal
+// Create row for all users table
+function createAllUserRow(user) {
+    return `
+        <tr>
+            <td>${user.firstName} ${user.lastName}</td>
+            <td>${user.email}</td>
+            <td>${user.mobileNo}</td>
+            <td><span class="status-badge ${user.status}">${user.status}</span></td>
+            <td>
+                <button onclick="viewUserDetails('${user._id}')" class="action-btn view">View</button>
+            </td>
+        </tr>
+    `;
+}
+
+// View user details
 async function viewUserDetails(userId) {
     try {
         const response = await fetch(`/users/${userId}`);
@@ -117,6 +140,32 @@ async function viewUserDetails(userId) {
                         </div>
                     </div>
 
+                    <div class="info-section address-info">
+                        <h3>Address Details</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Street:</label>
+                                <span>${user.address?.street || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>City:</label>
+                                <span>${user.address?.city || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>State:</label>
+                                <span>${user.address?.state || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Country:</label>
+                                <span>${user.address?.country || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Pincode:</label>
+                                <span>${user.address?.pincode || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="info-section status-info">
                         <h3>Account Status</h3>
                         <div class="info-grid">
@@ -127,6 +176,10 @@ async function viewUserDetails(userId) {
                             <div class="info-item">
                                 <label>Last Active:</label>
                                 <span>${new Date(user.lastActive).toLocaleString()}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Registered On:</label>
+                                <span>${new Date(user.createdAt).toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
