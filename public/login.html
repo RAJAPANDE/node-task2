@@ -37,16 +37,6 @@
         const loginForm = document.getElementById('loginForm');
         const notification = document.getElementById('notification');
 
-        function showNotification(message, type = 'error') {
-            const notif = document.getElementById('notification');
-            notif.textContent = message;
-            notif.className = `notification ${type}`;
-            notif.style.display = 'block';
-            setTimeout(() => {
-                notif.style.display = 'none';
-            }, 3000);
-        }
-
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -69,7 +59,7 @@
                     localStorage.setItem('userId', data.user._id);
                     localStorage.setItem('userData', JSON.stringify(data.user));
 
-                    // Emit socket event for user login
+                    // Emit user connected status
                     socket.emit('userConnected', data.user._id);
 
                     showNotification('Login successful', 'success');
@@ -86,7 +76,17 @@
                 showNotification('Login failed. Please try again.');
             }
         });
+
+        function showNotification(message, type = 'error') {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
     </script>
 </body>
 </html>
+
 
