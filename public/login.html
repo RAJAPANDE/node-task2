@@ -54,7 +54,7 @@
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('/users', {
+                const response = await fetch('/users/login', { // Changed to /users/login
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
