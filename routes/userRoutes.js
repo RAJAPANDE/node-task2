@@ -51,7 +51,8 @@ router.post('/login', async (req, res) => {
         const { loginId, password } = req.body;
 
         // Find user by loginId
-        const user = await User.findOne({ loginId });
+        const user = await User.findOne({ loginId: loginId }); // Ensure we search by loginId, not _id
+
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -140,7 +141,7 @@ router.post('/', async (req, res) => {
             },
             loginId,
             password,
-            status: 'online', // Set user as online
+            status: 'online', // Set user as online after registration
             lastActive: new Date()
         });
 
