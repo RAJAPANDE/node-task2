@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB Connection (Direct connection string)
+// MongoDB Connection
 mongoose.connect('mongodb+srv://rajapandey8769:mscVwt8olbbxUO7q@cluster1.h25fu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1')
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
@@ -65,49 +65,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle user connection
-    socket.on('userConnected', async (userId) => {
-        try {
-            const User = mongoose.model('User');
-            await User.findByIdAndUpdate(userId, {
-                status: 'online',
-                lastActive: new Date()
-            });
-
-            connectedUsers.set(userId, socket.id);
-
-            io.emit('userStatusUpdate', {
-                userId,
-                status: 'online',
-                lastActive: new Date()
-            });
-
-            console.log(`User ${userId} connected`);
-        } catch (error) {
-            console.error('Error updating user status:', error);
-        }
+    // Handle user registration
+    socket.on('userRegistered', (userData) => {
+        socket.broadcast.emit('newUserRegistered', userData);
     });
 
-    // Handle user status update
-    socket.on('updateUserStatus', async (data) => {
-        try {
-            const User = mongoose.model('User');
-            await User.findByIdAndUpdate(data.userId, {
-                status: data.status,
-                lastActive: new Date()
-            });
-
-            io.emit('userStatusUpdate', {
-                userId: data.userId,
-                status: data.status,
-                lastActive: new Date()
-            });
-        } catch (error) {
-            console.error('Error updating user status:', error);
-        }
-    });
-
-    // Handle disconnect
+    // Handle user disconnect (auto logout)
     socket.on('disconnect', async () => {
         try {
             for (const [userId, socketId] of connectedUsers.entries()) {
@@ -151,7 +114,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({
         success: false,
         message: 'Something went wrong!',
-        error: err.message
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
 
@@ -167,16 +130,6 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Promise Rejection:', err);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
 });
 
 module.exports = { app, server, io };
