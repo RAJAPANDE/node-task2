@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB Connection
+// MongoDB Connection (Direct connection string)
 mongoose.connect('mongodb+srv://rajapandey8769:mscVwt8olbbxUO7q@cluster1.h25fu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1')
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
@@ -88,11 +88,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle user registration
-    socket.on('userRegistered', (userData) => {
-        socket.broadcast.emit('newUserRegistered', userData);
-    });
-
     // Handle user status update
     socket.on('updateUserStatus', async (data) => {
         try {
@@ -156,7 +151,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({
         success: false,
         message: 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        error: err.message
     });
 });
 
