@@ -93,4 +93,3 @@ userSchema.virtual('fullName').get(function() {
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
-
