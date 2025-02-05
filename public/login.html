@@ -32,7 +32,59 @@
     <div id="notification" class="notification"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="login.js"></script>
+    <script>
+        const socket = io();
+const loginForm = document.getElementById('loginForm');
+const notification = document.getElementById('notification');
+
+function showNotification(message, type = 'error') {
+    const notif = document.getElementById('notification');
+    notif.textContent = message;
+    notif.className = `notification ${type}`;
+    notif.style.display = 'block';
+    setTimeout(() => {
+        notif.style.display = 'none';
+    }, 3000);
+}
+
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const loginId = document.getElementById('loginId').value;
+    const password = document.getElementById('password').value;
+
+    try {
+        const response = await fetch('/users/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ loginId, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            const loggedInUser = data.user; // Get the full user object
+            localStorage.setItem('userId', loggedInUser._id);
+            localStorage.setItem('userData', JSON.stringify(loggedInUser)); // Store the full object
+            showNotification('Login successful', 'success');
+
+            socket.emit('userConnected', loggedInUser); // Emit with the full user object
+
+            setTimeout(() => {
+                window.location.href = '/live-users.html';
+            }, 1000);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showNotification('Login failed. Please try again.', 'error');
+    }
+});
+
+    </script>
 </body>
 </html>
 
