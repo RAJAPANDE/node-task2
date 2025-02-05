@@ -89,10 +89,25 @@ io.on('connection', (socket) => {
     });
 
     // Handle user registration
-    socket.on('userRegistered', (userData) => {
-        socket.broadcast.emit('newUserRegistered', userData);
-    });
+    socket.on('userRegistered', async (userData) => {
+        try {
+            const User = mongoose.model('User');
+            const user = await User.findOne({ loginId: userData.loginId });
+            if (user) {
+              user.status = 'online';
+              user.lastActive = new Date();
+              await user.save();
 
+              connectedUsers.set(user._id.toString(), socket.id);
+
+              io.emit('userStatusUpdate', { userId: user._id, status: 'online' });
+
+              socket.broadcast.emit('newUserRegistered', userData);
+            }
+        } catch (error) {
+          console.error("Error updating user status after registration:", error);
+        }
+    });
     // Handle user status update
     socket.on('updateUserStatus', async (data) => {
         try {
