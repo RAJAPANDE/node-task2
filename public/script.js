@@ -236,11 +236,6 @@ break;
 }
 }
 
-// Socket connection status indicator
-socket.on('connect', () => {
-console.log('Connected to server');
-});
-
 socket.on('connect_error', (error) => {
 console.error('Connection error:', error);
 showNotification('Connection error. Please try again.', 'error');
