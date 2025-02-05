@@ -2,27 +2,31 @@ const socket = io();
 let allUsers = [];
 let activeUsers = [];
 
-// DOM Elements
 const searchInput = document.querySelector('.search-bar input');
 const totalUsersSpan = document.querySelector('.total-users span');
 const onlineUsersSpan = document.querySelector('.online-users span');
 const activeUsersTable = document.querySelector('.active-users-table tbody');
 const allUsersTable = document.querySelector('.all-users-table tbody');
 
-// Initialize
-document.addEventListener('DOMContentLoaded', fetchUsers);
+document.addEventListener('DOMContentLoaded', () => {
+    const storedUserData = localStorage.getItem('userData');
+    if (storedUserData) {
+        const userData = JSON.parse(storedUserData);
+        socket.emit('userConnected', userData); // Emit with the full user object on page load
+    }
+    fetchUsers();
+});
 
-// Event Listeners
+
 searchInput.addEventListener('input', handleSearch);
 socket.on('userStatusUpdate', handleUserStatusUpdate);
-socket.on('newUserRegistered', handleNewUser);
+// socket.on('newUserRegistered', handleNewUser); // No longer needed, updates come via userStatusUpdate
 
-// Fetch all users
 async function fetchUsers() {
     try {
         const response = await fetch('/users');
         const data = await response.json();
-        
+
         if (data.success) {
             allUsers = data.users;
             updateTables();
@@ -33,34 +37,30 @@ async function fetchUsers() {
     }
 }
 
-// Update tables
 function updateTables() {
     activeUsers = allUsers.filter(user => user.status === 'online');
-    
-    // Update stats
+
     totalUsersSpan.textContent = allUsers.length;
     onlineUsersSpan.textContent = activeUsers.length;
-    
-    // Update tables
+
     updateActiveUsersTable();
     updateAllUsersTable();
 }
 
-// Update active users table
+function updateActive
+    
 function updateActiveUsersTable() {
     activeUsersTable.innerHTML = activeUsers
         .map(user => createActiveUserRow(user))
         .join('');
 }
 
-// Update all users table
 function updateAllUsersTable() {
     allUsersTable.innerHTML = allUsers
         .map(user => createAllUserRow(user))
         .join('');
 }
 
-// Create row for active users table
 function createActiveUserRow(user) {
     return `
         <tr>
@@ -75,7 +75,6 @@ function createActiveUserRow(user) {
     `;
 }
 
-// Create row for all users table
 function createAllUserRow(user) {
     return `
         <tr>
@@ -90,12 +89,11 @@ function createAllUserRow(user) {
     `;
 }
 
-// View user details
 async function viewUserDetails(userId) {
     try {
         const response = await fetch(`/users/${userId}`);
         const data = await response.json();
-        
+
         if (data.success) {
             const user = data.user;
             const modalContent = `
@@ -177,7 +175,6 @@ async function viewUserDetails(userId) {
             modalContentDiv.innerHTML = modalContent;
             modal.style.display = 'block';
 
-            // Close modal functionality
             const closeBtn = modal.querySelector('.close');
             closeBtn.onclick = () => modal.style.display = 'none';
             window.onclick = (event) => {
@@ -194,50 +191,52 @@ async function viewUserDetails(userId) {
     }
 }
 
-// Handle user status update
 function handleUserStatusUpdate(data) {
     const userIndex = allUsers.findIndex(user => user._id === data.userId);
     if (userIndex !== -1) {
         allUsers[userIndex].status = data.status;
         allUsers[userIndex].lastActive = data.lastActive;
         updateTables();
+
+        const storedUserData = localStorage.getItem('userData');
+        if (storedUserData) {
+            const loggedInUser = JSON.parse(storedUserData);
+            if (loggedInUser._id === data.userId) {
+                updateUserStatusDisplay(data.status);
+            }
+        }
     }
 }
 
-// Handle new user registration
-function handleNewUser(userData) {
-    allUsers.push(userData);
-    updateTables();
+function updateUserStatusDisplay(status) {
+    const statusBadge = document.querySelector('.status-badge');
+    if (statusBadge) {
+        statusBadge.textContent = status;
+        statusBadge.className = `status-badge ${status}`;
+    }
 }
 
-// Handle search
+
 function handleSearch(e) {
     const searchTerm = e.target.value.toLowerCase();
-    const filteredUsers = allUsers.filter(user => 
+    const filteredUsers = allUsers.filter(user =>
         user.firstName.toLowerCase().includes(searchTerm) ||
         user.lastName.toLowerCase().includes(searchTerm) ||
         user.email.toLowerCase().includes(searchTerm)
     );
-    
+
     activeUsers = filteredUsers.filter(user => user.status === 'online');
-    
-    // Update tables with filtered data
-    activeUsersTable.innerHTML = activeUsers
-        .map(user => createActiveUserRow(user))
-        .join('');
-    
-    allUsersTable.innerHTML = filteredUsers
-        .map(user => createAllUserRow(user))
-        .join('');
+
+    updateActiveUsersTable();
+    updateAllUsersTable();
 }
 
-// Show notification
 function showNotification(message, type = 'error') {
     const notification = document.getElementById('notification');
     notification.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
-    
+
     setTimeout(() => {
         notification.style.display = 'none';
     }, 3000);
