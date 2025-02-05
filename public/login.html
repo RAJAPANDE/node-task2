@@ -34,6 +34,13 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+  socket.on('connect', () => {
+    console.log('Connected to server');
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        socket.emit('userConnected', userId);
+    }
+});
 const loginForm = document.getElementById('loginForm');
 const notification = document.getElementById('notification');
 
