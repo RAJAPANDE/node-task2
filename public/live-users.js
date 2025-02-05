@@ -1,4 +1,12 @@
 const socket = io();
+socket.on('connect', () => {
+    console.log('Connected to server');
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        socket.emit('userConnected', userId);
+    }
+});
+
 let allUsers = [];
 let activeUsers = [];
 
