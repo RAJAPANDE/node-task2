@@ -1,7 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
 // Initialize Socket.IO
 const socket = io();
-
+socket.on('connect', () => {
+    console.log('Connected to server');
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        socket.emit('userConnected', userId);
+    }
+});
 // Form submission handler
 const userForm = document.getElementById('userForm');
 if (userForm) {
