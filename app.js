@@ -5,85 +5,57 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const userRoutes = require('./routes/userRoutes');
-const bcrypt = require('bcrypt'); // Make sure bcrypt is installed: npm install bcrypt
+const bcrypt = require('bcrypt');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://rajapandey8769:mscVwt8olbbxUO7q@cluster1.h25fu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1'; // Use environment variables in production
-
-mongoose.connect(mongoURI)
+// MongoDB Connection
+mongoose.connect('mongodb+srv://rajapandey8769:mscVwt8olbbxUO7q@cluster1.h25fu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1')
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
 
+// Store connected users
 const connectedUsers = new Map();
 
+// Socket.IO Connection Handler
 io.on('connection', (socket) => {
     console.log('New client connected');
 
-    socket.on('userConnected', async (userData) => {  // Receive the full user object
-        try {
-            const User = mongoose.model('User');
-            const userId = userData._id;
-
-            const updatedUser = await User.findByIdAndUpdate(userId, { status: 'online', lastActive: new Date() }, { new: true });
-
-            if (!updatedUser) {
-                console.error("User not found for update:", userId);
-                return; // Handle the case where the user is not found
-            }
-
-            connectedUsers.set(userId, socket.id);
-            io.emit('userStatusUpdate', { userId, status: 'online', lastActive: new Date() });
-            console.log(`User ${userId} connected`);
-
-        } catch (error) {
-            console.error('Error updating user status:', error);
-        }
-    });
-
-    socket.on('disconnect', async () => {
-        try {
-            let userIdToUpdate = null;
-
-            for (const [userId, socketId] of connectedUsers.entries()) {
-                if (socketId === socket.id) {
-                    userIdToUpdate = userId;
-                    connectedUsers.delete(userId);
-                    break;
-                }
-            }
-
-            if (userIdToUpdate) {
-                const User = mongoose.model('User');
-                await User.findByIdAndUpdate(userIdToUpdate, { status: 'offline', lastActive: new Date() });
-                io.emit('userStatusUpdate', { userId: userIdToUpdate, status: 'offline', lastActive: new Date() });
-                console.log(`User ${userIdToUpdate} disconnected`);
-            }
-
-        } catch (error) {
-            console.error('Error handling disconnect:', error);
-        }
-        console.log('Client disconnected');
-    });
-
-
-    socket.on('userLogin', async (loginData) => {  // This is for direct socket login (if you need it)
+    // Handle user login
+    socket.on('userLogin', async (loginData) => {
         try {
             const User = mongoose.model('User');
             const user = await User.findOne({ loginId: loginData.loginId });
 
             if (user && await bcrypt.compare(loginData.password, user.password)) {
-                await User.findByIdAndUpdate(user._id, { status: 'online', lastActive: new Date() });
-                connectedUsers.set(user._id.toString(), socket.id);
-                io.emit('userStatusUpdate', { userId: user._id, status: 'online', lastActive: new Date() });
+                // Update user status to online
+                await User.findByIdAndUpdate(user._id, {
+                    status: 'online',
+                    lastActive: new Date()
+                });
 
-                socket.emit('loginSuccess', { userId: user._id, firstName: user.firstName, lastName: user.lastName });
+                // Store socket mapping
+                connectedUsers.set(user._id.toString(), socket.id);
+
+                // Broadcast to all clients
+                io.emit('userStatusUpdate', {
+                    userId: user._id,
+                    status: 'online',
+                    lastActive: new Date()
+                });
+
+                socket.emit('loginSuccess', {
+                    userId: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName
+                });
             } else {
                 socket.emit('loginError', 'Invalid credentials');
             }
@@ -93,45 +65,123 @@ io.on('connection', (socket) => {
         }
     });
 
-
-    socket.on('updateUserStatus', async (data) => { // If you need a separate event for status updates
+    // Handle user connection
+    socket.on('userConnected', async (userId) => {
         try {
             const User = mongoose.model('User');
-            await User.findByIdAndUpdate(data.userId, { status: data.status, lastActive: new Date() });
-            io.emit('userStatusUpdate', { userId: data.userId, status: data.status, lastActive: new Date() });
+            await User.findByIdAndUpdate(userId, {
+                status: 'online',
+                lastActive: new Date()
+            });
+
+            connectedUsers.set(userId, socket.id);
+
+            io.emit('userStatusUpdate', {
+                userId,
+                status: 'online',
+                lastActive: new Date()
+            });
+
+            console.log(`User ${userId} connected`);
         } catch (error) {
             console.error('Error updating user status:', error);
         }
     });
 
+    // Handle user registration
+    socket.on('userRegistered', (userData) => {
+        socket.broadcast.emit('newUserRegistered', userData);
+    });
+
+    // Handle user status update
+    socket.on('updateUserStatus', async (data) => {
+        try {
+            const User = mongoose.model('User');
+            await User.findByIdAndUpdate(data.userId, {
+                status: data.status,
+                lastActive: new Date()
+            });
+
+            io.emit('userStatusUpdate', {
+                userId: data.userId,
+                status: data.status,
+                lastActive: new Date()
+            });
+        } catch (error) {
+            console.error('Error updating user status:', error);
+        }
+    });
+
+    // Handle disconnect
+    socket.on('disconnect', async () => {
+        try {
+            for (const [userId, socketId] of connectedUsers.entries()) {
+                if (socketId === socket.id) {
+                    const User = mongoose.model('User');
+                    await User.findByIdAndUpdate(userId, {
+                        status: 'offline',
+                        lastActive: new Date()
+                    });
+
+                    connectedUsers.delete(userId);
+
+                    io.emit('userStatusUpdate', {
+                        userId,
+                        status: 'offline',
+                        lastActive: new Date()
+                    });
+
+                    console.log(`User ${userId} disconnected`);
+                    break;
+                }
+            }
+        } catch (error) {
+            console.error('Error handling disconnect:', error);
+        }
+        console.log('Client disconnected');
+    });
+
+    // Handle errors
     socket.on('error', (error) => {
         console.error('Socket error:', error);
     });
 });
 
+// Routes
 app.use('/users', userRoutes);
 
+// Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ success: false, message: 'Something went wrong!', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
+    res.status(500).json({
+        success: false,
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
+// Handle 404 routes
 app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
+    res.status(404).json({
+        success: false,
+        message: 'Route not found'
+    });
 });
 
+// Server setup
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
     console.error('Unhandled Promise Rejection:', err);
 });
 
+// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
 });
 
 module.exports = { app, server, io };
-
