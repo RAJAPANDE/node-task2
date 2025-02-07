@@ -4,7 +4,7 @@ window.addEventListener('beforeunload', () => {
   if (userId) {
     socket.emit('userDisconnected', userId);
     // Using sendBeacon for more reliable delivery during page unload
-    navigator.sendBeacon('/api/users/offline', JSON.stringify({ userId }));
+    navigator.sendBeacon('/users/offline', JSON.stringify({ userId }));
   }
 });
 let allUsers = [];
