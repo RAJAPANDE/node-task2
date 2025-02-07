@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Login</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+<div class="login-container">
+<div class="login-header">
+<h1>Login</h1>
+</div>
+<form id="loginForm" class="login-form">
+<div class="form-group">
+<label for="loginId">Login ID</label>
+<input type="text" id="loginId" name="loginId" required>
+</div>
+<div class="form-group">
+<label for="password">Password</label>
+<input type="password" id="password" name="password" required>
+</div>
+<button type="submit" class="submit-btn">Login</button>
+</form>
+<div class="register-link">
+<p>Don't have an account? <a href="index.html">Register here</a></p>
+</div>
+</div>
+</div>
+<div id="notification" class="notification"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const loginForm = document.getElementById('loginForm');
+const notification = document.getElementById('notification');
+
+function showNotification(message, type = 'error') {
+  const notif = document.getElementById('notification');
+  notif.textContent = message;
+  notif.className = `notification ${type}`;
+  notif.style.display = 'block';
+  setTimeout(() => {
+    notif.style.display = 'none';
+  }, 3000);
+}
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const loginId = document.getElementById('loginId').value;
+  const password = document.getElementById('password').value;
+  try {
+    const response = await fetch('/users/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ loginId, password })
+    });
+    const data = await response.json();
+    if (data.success) {
+      // Store user data
+      localStorage.setItem('userId', data.user._id);
+      localStorage.setItem('userData', JSON.stringify(data.user));
+      // Emit socket event
+      socket.emit('userConnected', data.user._id);
+      showNotification('Login successful', 'success');
+      // Redirect to live users page
+      setTimeout(() => {
+        window.location.href = '/live-users.html';
+      }, 1000);
+    } else {
+      showNotification(data.message);
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    showNotification('Login failed. Please try again.');
+  }
+});
+
+// Handle login success
+socket.on('loginSuccess', (data) => {
+  localStorage.setItem('userId', data.userId);
+  localStorage.setItem('userData', JSON.stringify(data));
+  window.location.href = '/live-users.html';
+});
+
+// Listen for user status updates
+socket.on('userStatusUpdate', (data) => {
+  const userId = localStorage.getItem('userId');
+  if (userId && userId === data.userId) {
+    // Update user status in local storage
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    userData.status = data.status;
+    userData.lastActive = data.lastActive;
+    localStorage.setItem('userData', JSON.stringify(userData));
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.socket.io;">
+<title>User Registration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+<header>
+<h1>User Registration</h1>
+<a href="live-users.html" class="live-users-link">View Live Users</a>
+</header>
+<div class="form-container">
+<form id="userForm">
+<div class="form-group">
+<label for="firstName">First Name*</label>
+<input type="text" id="firstName" name="firstName" required>
+</div>
+<div class="form-group">
+<label for="lastName">Last Name*</label>
+<input type="text" id="lastName" name="lastName" required>
+</div>
+<div class="form-group">
+<label for="mobileNo">Mobile Number*</label>
+<input type="tel" id="mobileNo" name="mobileNo" required>
+</div>
+<div class="form-group">
+<label for="email">Email*</label>
+<input type="email" id="email" name="email" required>
+</div>
+<div class="form-group">
+<label for="street">Street</label>
+<input type="text" id="street" name="street">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label for="city">City</label>
+<input type="text" id="city" name="city">
+</div>
+<div class="form-group">
+<label for="state">State</label>
+<input type="text" id="state" name="state">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label for="country">Country</label>
+<input type="text" id="country" name="country">
+</div>
+<div class="form-group">
+<label for="pincode">Pincode</label>
+<input type="text" id="pincode" name="pincode">
+</div>
+</div>
+<div class="form-group">
+<label for="loginId">Login ID*</label>
+<input type="text" id="loginId" name="loginId" required>
+</div>
+<div class="form-group">
+<label for="password">Password*</label>
+<input type="password" id="password" name="password" required>
+<div class="password-strength"></div>
+</div>
+<button type="submit" class="submit-btn">Register</button>
+<div class="register-link">
+<p>Already have an account? <a href="login.html">Login here</a></p>
+</div>
+</form>
+</div>
+</div>
+<div id="notification" class="notification"></div>
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

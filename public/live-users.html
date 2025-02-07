@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+<div class="stats-bar">
+<div class="stat total-users">
+<label>Total Users</label>
+<span>0</span>
+</div>
+<div class="stat online-users">
+<label>Online Users</label>
+<span>0</span>
+</div>
+</div>
+<div class="search-bar">
+<input type="text" placeholder="Search users...">
+</div>
+<div class="section">
+<h2>Active Users</h2>
+<div class="table-container">
+<table class="active-users-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Last Active</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+<!-- Active users will be inserted here -->
+</tbody>
+</table>
+</div>
+</div>
+<div class="section">
+<h2>All Users</h2>
+<div class="table-container">
+<table class="all-users-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Mobile</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+<!-- All users will be inserted here -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="userModal" class="modal">
+<div class="modal-content">
+<!-- User details will be inserted here -->
+</div>
+</div>
+<div id="notification" class="notification"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="live-users.js"></script>
+<script>
+  // Ensure localStorage is cleared on page load if user was previously logged in
+  window.addEventListener('load', () => {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      socket.emit('userConnected', userId);
+    }
+  });
+</script>
+</body>
+</html>
